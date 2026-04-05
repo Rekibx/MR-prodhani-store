@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const API_URL = 'http://localhost:5000/orders';
+const API_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/orders`
+  : 'http://localhost:5000/orders';
 
 export function useOrders() {
   const [orders, setOrders] = useState([]);
