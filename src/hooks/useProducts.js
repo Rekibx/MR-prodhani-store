@@ -1,99 +1,82 @@
 import { useState, useEffect, useCallback } from 'react';
-
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const isFirebase = BASE_URL.includes('firebaseio');
-
-const getEndpoint = (path, id = '') => {
-  if (isFirebase) {
-    return `${BASE_URL.replace(/\/$/, '')}${path}${id ? '/' + id : ''}.json`;
-  }
-  return `${BASE_URL.replace(/\/$/, '')}${path}${id ? '/' + id : ''}`;
-};
+import { db } from '../firebase/config';
+import { ref, onValue, push, update, remove, set } from 'firebase/database';
 
 export function useProducts() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(getEndpoint('/products'));
-      if (!res.ok) throw new Error('Failed to fetch products');
-      const data = await res.json();
-      
-      if (!data) {
-        setProducts([]);
-      } else if (Array.isArray(data)) {
-        setProducts(data.filter(Boolean));
+  useEffect(() => {
+    const productsRef = ref(db, 'products');
+    
+    setLoading(true);
+    const unsubscribe = onValue(productsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Handle both Array (json-server) and Object (Firebase) styles
+        const productsList = Object.keys(data).map(key => {
+          const item = data[key];
+          return {
+            ...item,
+            id: key // Use Firebase key as the ID
+          };
+        }).filter(Boolean);
+        setProducts(productsList);
       } else {
-        const loadedProducts = [];
-        for (const key in data) {
-          loadedProducts.push({ id: data[key].id || key, ...data[key] });
-        }
-        setProducts(loadedProducts);
+        setProducts([]);
       }
-    } catch (err) {
-      setError(err.message);
-    } finally {
       setLoading(false);
-    }
+    }, (error) => {
+      setError(error.message);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
   const addProduct = async (productData) => {
-    const res = await fetch(getEndpoint('/products'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(productData),
-    });
-    if (!res.ok) throw new Error('Failed to add product');
-    
-    let newProduct;
-    if (isFirebase) {
-       const firebaseRes = await res.json();
-       const newId = firebaseRes.name;
-       newProduct = { id: newId, ...productData };
-       
-       await fetch(getEndpoint('/products', newId), {
-         method: 'PATCH',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ id: newId })
-       });
-    } else {
-       newProduct = await res.json();
+    try {
+      const productsRef = ref(db, 'products');
+      const newProductRef = push(productsRef);
+      const newId = newProductRef.key;
+      
+      const newProduct = {
+        ...productData,
+        id: newId
+      };
+      
+      await set(newProductRef, newProduct);
+      return newProduct;
+    } catch (err) {
+      console.error('Add product error:', err);
+      throw err;
     }
-    
-    setProducts((prev) => [...prev, newProduct]);
-    return newProduct;
   };
 
   const updateProduct = async (id, productData) => {
-    const res = await fetch(getEndpoint('/products', id), {
-      method: isFirebase ? 'PATCH' : 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(productData),
-    });
-    if (!res.ok) throw new Error('Failed to update product');
-    
-    let updatedProduct;
-    if (isFirebase) {
-       updatedProduct = { id, ...productData };
-    } else {
-       updatedProduct = await res.json();
+    try {
+      const productRef = ref(db, `products/${id}`);
+      const updatedData = {
+        ...productData,
+        id: id // Ensure ID stays consistent
+      };
+      await update(productRef, updatedData);
+      return updatedData;
+    } catch (err) {
+      console.error('Update product error:', err);
+      throw err;
     }
-    
-    setProducts((prev) => prev.map((p) => (String(p.id) === String(id) ? updatedProduct : p)));
-    return updatedProduct;
   };
 
   const deleteProduct = async (id) => {
-    const res = await fetch(getEndpoint('/products', id), { method: 'DELETE' });
-    if (!res.ok) throw new Error('Failed to delete product');
-    setProducts((prev) => prev.filter((p) => String(p.id) !== String(id)));
+    try {
+      const productRef = ref(db, `products/${id}`);
+      await remove(productRef);
+    } catch (err) {
+      console.error('Delete product error:', err);
+      throw err;
+    }
   };
 
   return {
@@ -103,6 +86,6 @@ export function useProducts() {
     addProduct,
     updateProduct,
     deleteProduct,
-    refresh: fetchProducts,
+    refresh: () => {} // Not strictly needed with onValue
   };
 }
