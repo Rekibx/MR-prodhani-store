@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL}/orders`
-  : 'http://localhost:5000/orders';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const isFirebase = BASE_URL.includes('firebaseio');
+
+const getEndpoint = (path, id = '') => {
+  if (isFirebase) {
+    return `${BASE_URL.replace(/\/$/, '')}${path}${id ? '/' + id : ''}.json`;
+  }
+  return `${BASE_URL.replace(/\/$/, '')}${path}${id ? '/' + id : ''}`;
+};
 
 export function useOrders() {
   const [orders, setOrders] = useState([]);
@@ -12,10 +18,21 @@ export function useOrders() {
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(API_URL);
+      const res = await fetch(getEndpoint('/orders'));
       if (!res.ok) throw new Error('Failed to fetch orders');
       const data = await res.json();
-      setOrders(data);
+      
+      if (!data) {
+        setOrders([]);
+      } else if (Array.isArray(data)) {
+        setOrders(data.filter(Boolean));
+      } else {
+        const loadedOrders = [];
+        for (const key in data) {
+          loadedOrders.push({ id: data[key].id || key, ...data[key] });
+        }
+        setOrders(loadedOrders);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -28,21 +45,36 @@ export function useOrders() {
   }, [fetchOrders]);
 
   const placeOrder = async (orderData) => {
-    const res = await fetch(API_URL, {
+    const res = await fetch(getEndpoint('/orders'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderData),
     });
     if (!res.ok) throw new Error('Failed to place order');
-    const newOrder = await res.json();
+    
+    let newOrder;
+    if (isFirebase) {
+       const firebaseRes = await res.json();
+       const newId = firebaseRes.name;
+       newOrder = { id: newId, ...orderData };
+       
+       await fetch(getEndpoint('/orders', newId), {
+         method: 'PATCH',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ id: newId })
+       });
+    } else {
+       newOrder = await res.json();
+    }
+    
     setOrders((prev) => [...prev, newOrder]);
     return newOrder;
   };
 
   const deleteOrder = async (id) => {
-    const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    const res = await fetch(getEndpoint('/orders', id), { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete order');
-    setOrders((prev) => prev.filter((o) => o.id !== id));
+    setOrders((prev) => prev.filter((o) => String(o.id) !== String(id)));
   };
 
   return {
