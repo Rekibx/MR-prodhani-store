@@ -1,10 +1,18 @@
 import { Link } from 'react-router-dom';
 import { FiShoppingCart } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
+import { useToast } from './Toast';
 import './ProductCard.css';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
+  const { addToast } = useToast();
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    addToCart(product);
+    addToast(`${product.name} added to cart`, 'success');
+  };
 
   return (
     <div className="product-card glass-card">
@@ -32,17 +40,21 @@ export default function ProductCard({ product }) {
           <h3 className="product-name">{product.name}</h3>
         </Link>
         <p className="product-specs">
-          {product.specs?.[0] || 'N/A'} • {product.specs?.[1] || 'N/A'}
+          {(product.specs || [])
+            .filter(spec => spec && spec !== 'N/A')
+            .join(' • ')}
         </p>
         <div className="product-footer">
-          <span className="product-price">₹{product.price}</span>
+          <div className="price-group">
+            <span className="product-price">₹{product.price.toLocaleString()}</span>
+            {product.originalPrice && product.originalPrice > product.price && (
+              <span className="product-original-price">₹{product.originalPrice.toLocaleString()}</span>
+            )}
+          </div>
           <button
             className="btn-icon"
-            aria-label="Add to cart"
-            onClick={(e) => {
-              e.preventDefault();
-              addToCart(product);
-            }}
+            aria-label={`Add ${product.name} to cart`}
+            onClick={handleAddToCart}
           >
             <FiShoppingCart size={20} />
           </button>

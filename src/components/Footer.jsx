@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom';
+import { FiInstagram, FiPhone, FiMail } from 'react-icons/fi';
+
 export default function Footer() {
   return (
     <footer className="footer">
@@ -19,14 +22,32 @@ export default function Footer() {
               <a href="/shop">Shop</a>
             </li>
             <li>
-              <a href="/cart">Cart</a>
+              <Link to="/cart">Cart</Link>
+            </li>
+            <li>
+              <Link to="/track">Track Order</Link>
             </li>
           </ul>
         </div>
         <div className="footer-section">
           <h4>Contact Us</h4>
-          <p>Email: support@mrprodhanistore.com</p>
-          <p>Phone: +1 234 567 8900</p>
+          <p>
+            <FiMail /> support@mrprodhanistore.com
+          </p>
+          <p>
+            <FiPhone /> +91 9365647914
+          </p>
+          <div className="social-links">
+            <a
+              href="https://www.instagram.com/m.r._prodhani_store?igsh=dTZwam9nczU5M3Zw"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="social-icon"
+              aria-label="Instagram"
+            >
+              <FiInstagram /> Instagram
+            </a>
+          </div>
         </div>
       </div>
       <div className="footer-bottom">

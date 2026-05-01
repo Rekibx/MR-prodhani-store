@@ -11,12 +11,14 @@ export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user);
+      setUserId(user?.uid || null);
       setLoading(false);
     });
     return () => unsubscribe();
@@ -49,9 +51,20 @@ export function AuthProvider({ children }) {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-dark)' }}>
+        <div className="glass-card" style={{ padding: '3rem', textAlign: 'center' }}>
+          <h2 className="gradient-text">Initializing Store...</h2>
+          <div className="loader" style={{ margin: '1rem auto' }}></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, authError, login, logout }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ isAuthenticated, userId, loading, authError, login, logout }}>
+      {children}
     </AuthContext.Provider>
   );
 }

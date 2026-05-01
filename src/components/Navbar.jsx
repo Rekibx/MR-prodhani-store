@@ -2,13 +2,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FiShoppingCart, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
-import { useState } from 'react';
-
+import { useState, useEffect } from 'react';
 export default function Navbar() {
   const { cartCount } = useCart();
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -19,17 +27,37 @@ export default function Navbar() {
   const closeMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <nav className="navbar">
+    <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="navbar-container">
         <Link to="/" className="navbar-brand" onClick={closeMenu}>
           MR Prodhani Store
         </Link>
+        <div 
+          className="mobile-menu-overlay"
+          onClick={closeMenu}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            opacity: isMobileMenuOpen ? 1 : 0,
+            visibility: isMobileMenuOpen ? 'visible' : 'hidden',
+            transition: 'all 0.3s ease',
+            zIndex: 98
+          }}
+        />
         <div className={`navbar-links ${isMobileMenuOpen ? 'active' : ''}`}>
           <Link to="/" className="nav-link" onClick={closeMenu}>
             Home
           </Link>
           <Link to="/shop" className="nav-link" onClick={closeMenu}>
             Shop
+          </Link>
+          <Link to="/track" className="nav-link" onClick={closeMenu}>
+            Track Order
           </Link>
           {isAuthenticated ? (
             <Link to="/admin" className="nav-link" onClick={closeMenu}>

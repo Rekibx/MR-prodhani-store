@@ -84,14 +84,90 @@
   .admin-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 1.5rem;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
   }
 
   .admin-header h1 {
     text-align: center;
+    font-size: 2rem;
   }
   
   .admin-card {
     padding: 1rem;
+  }
+
+  .admin-tabs {
+    flex-direction: column;
+    gap: 0.5rem !important;
+  }
+
+  .admin-tabs .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Mobile card layout for admin table */
+  .admin-table-container {
+    overflow: visible;
+    border-radius: 12px;
+  }
+
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table, 
+  .admin-table tbody, 
+  .admin-table tr, 
+  .admin-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-table tr {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    position: relative;
+  }
+
+  .admin-table tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .admin-table td {
+    padding: 0.4rem 0;
+    border: none;
+    font-size: 0.9rem;
+  }
+
+  .admin-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--primary);
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.2rem;
+  }
+
+  .actions-cell {
+    justify-content: flex-end;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--glass-border);
+    margin-top: 0.5rem;
+  }
+
+  .admin-thumb {
+    width: 56px;
+    height: 56px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 }

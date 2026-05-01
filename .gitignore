@@ -11,6 +11,15 @@ node_modules
 dist
 dist-ssr
 *.local
+venv-rembg/
+
+# Environment files
+.env
+.env.local
+
+# Lint results
+lint_results.*
+*.log
 
 # Editor directories and files
 .vscode/*

@@ -10,6 +10,7 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
   },
   server: {
-    port: 3001, // Change frontend server port to avoid conflict
+    port: 3000,
+    strictPort: true,
   },
 });

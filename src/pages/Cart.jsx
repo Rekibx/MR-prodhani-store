@@ -12,8 +12,7 @@ export default function Cart() {
     0
   );
   const shipping = 0; // Free shipping promo
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + shipping + tax;
+  const total = subtotal + shipping;
 
   return (
     <div className="cart-page">
@@ -80,10 +79,7 @@ export default function Cart() {
               <span className="text-secondary">Free</span>
             </div>
 
-            <div className="summary-row">
-              <span>Estimated Tax</span>
-              <span>₹{tax.toFixed(2)}</span>
-            </div>
+
 
             <div className="summary-total">
               <span>Total</span>

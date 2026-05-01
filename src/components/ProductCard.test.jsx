@@ -1,6 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { render } from '../test-utils.jsx';
 import ProductCard from './ProductCard';
 
 // Mock the cart hook
@@ -17,12 +17,9 @@ const mockProduct = {
   specs: ['Spec 1', 'Spec 2'],
 };
 
-// Wrapper for router context (ProductCard has a Link)
-const renderWithRouter = (ui) => render(<BrowserRouter>{ui}</BrowserRouter>);
-
 describe('ProductCard Component', () => {
   it('renders product details correctly', () => {
-    renderWithRouter(<ProductCard product={mockProduct} />);
+    render(<ProductCard product={mockProduct} />);
 
     expect(screen.getByText('Test Product')).toBeInTheDocument();
     expect(screen.getByText('₹99')).toBeInTheDocument();
@@ -30,9 +27,9 @@ describe('ProductCard Component', () => {
   });
 
   it('calls addToCart when the button is clicked', () => {
-    renderWithRouter(<ProductCard product={mockProduct} />);
+    render(<ProductCard product={mockProduct} />);
 
-    const button = screen.getByRole('button', { name: /add to cart/i });
+    const button = screen.getByRole('button', { name: /add.*cart/i });
     fireEvent.click(button);
 
     expect(mockAddToCart).toHaveBeenCalledWith(mockProduct);

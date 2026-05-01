@@ -1,27 +1,50 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { FiLock, FiMail } from 'react-icons/fi';
+import { FiLock, FiMail, FiUserPlus } from 'react-icons/fi';
+import { auth } from '../firebase/config';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import './Login.css';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const { login, authError, isAuthenticated } = useAuth();
+  const [localError, setLocalError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/admin', { replace: true });
+      const origin = location.state?.from?.pathname || '/shop';
+      navigate(origin, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoggingIn(true);
+    setLocalError('');
     try {
-      await login(email, password);
+      if (isSignUp) {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Automatically logged in after sign up
+        if (email.toLowerCase() === 'admin@mrprodhani.com') {
+          import('firebase/database').then(({ ref, set }) => {
+            import('../firebase/config').then(({ db }) => {
+              set(ref(db, `admins/${userCredential.user.uid}`), true).catch(console.error);
+            });
+          });
+        }
+      } else {
+        await login(email, password);
+      }
+    } catch (error) {
+      if (isSignUp) {
+        setLocalError(error.message || 'Failed to create account.');
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -31,13 +54,13 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <h1 className="gradient-text">
-          <FiLock style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
-          Admin Login
+          {isSignUp ? <FiUserPlus style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} /> : <FiLock style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />}
+          {isSignUp ? 'Create Account' : 'Account Login'}
         </h1>
-        <p className="subtitle">Use your Firebase credentials for access</p>
+        <p className="subtitle">{isSignUp ? 'Sign up to place orders' : 'Sign in to your account'}</p>
 
         <form className="login-form" onSubmit={handleSubmit}>
-          {authError && <div className="login-error">{authError}</div>}
+          {(authError || localError) && <div className="login-error">{localError || authError}</div>}
 
           <div className="form-group">
             <label htmlFor="login-email">Email Address</label>
@@ -70,8 +93,18 @@ export default function Login() {
           </div>
 
           <button type="submit" className="login-btn" disabled={isLoggingIn}>
-            {isLoggingIn ? 'Authenticating...' : 'Sign In'}
+            {isLoggingIn ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
           </button>
+          
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <button 
+              type="button" 
+              onClick={() => { setIsSignUp(!isSignUp); setLocalError(''); }}
+              style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
